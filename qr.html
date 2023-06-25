@@ -1,0 +1,39 @@
+{{ define "qr" }}
+<!DOCTYPE html>
+<html lang="en-GB">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="application-name" content="">
+        <meta name="author" content="Matthew Chipperfield">
+        <meta name="description" content="">
+        <meta name="keywords" content="">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        
+        <link rel="stylesheet" href="https://www.w3schools.com/w3css/4/w3.css">
+
+        <title></title>
+    </head>
+    <body>
+        <main class="w3-container w3-quarter">
+            {{if .Error}}
+            <section class="w3-container w3-red">
+                {{.Error}}
+            </section>
+            {{end}}
+            {{if .Code}}
+            <section class="w3-center">
+                <img src="data:image/png;base64, {{.Code}}" alt="Generated QR Code" class="w3-image" />
+            </section>
+            <hr class="w3-border-green" />
+            {{end}}            
+            <section>
+                <form name="qrcode" method="POST" action="" enctype="application/x-www-form-urlencoded">
+                    <label for="text">Text to encode:</label>
+                    <input name="text" type="text" placeholder="https://example@domain.com" value="{{.Text}}" required class="w3-input w3-border w3-mobile" /><br />
+                    <button name="submit" type="submit" value="Login!" class="w3-button w3-green w3-mobile ">Generate QR Code!</button>
+                </form>
+            </section>
+        </main>
+    </body>
+</html>
+{{ end }}
