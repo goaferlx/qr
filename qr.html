@@ -16,17 +16,17 @@
     <body>
         <main class="w3-container w3-quarter">
             {{if .Error}}
-            <section class="w3-container w3-red">
+            <section class="w3-panel w3-red">
                 {{.Error}}
             </section>
             {{end}}
             {{if .Code}}
-            <section class="w3-center">
+            <section class="w3-section w3-center">
                 <img src="data:image/png;base64, {{.Code}}" alt="Generated QR Code" class="w3-image" />
             </section>
             <hr class="w3-border-green" />
             {{end}}            
-            <section>
+            <section class="w3-section">
                 <form name="qrcode" method="POST" action="" enctype="application/x-www-form-urlencoded">
                     <label for="text">Text to encode:</label>
                     <input name="text" type="text" placeholder="https://example@domain.com" value="{{.Text}}" required class="w3-input w3-border w3-mobile" /><br />
