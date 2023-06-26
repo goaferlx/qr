@@ -1,0 +1,8 @@
+dispatch: 
+
+- url: "qrcode.matthewchipperfield.com/"
+  service: qrcode
+
+- url: "qrcode.goaferlx.com/"
+  service: qrcode
+
