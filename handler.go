@@ -23,12 +23,16 @@ type Response struct {
 type Handler struct {
 	http.Handler
 	logger *slog.Logger
+	tmpl   *template.Template
 }
 
 func NewHandler(logger *slog.Logger) *Handler {
+	tmpl := template.Must(template.New("").ParseFiles("qr.html"))
 	h := Handler{
 		logger: logger,
+		tmpl:   tmpl,
 	}
+
 	router := mux.NewRouter().StrictSlash(true)
 	router.HandleFunc("/", h.ShowForm(nil)).Methods(http.MethodGet)
 	router.HandleFunc("/", h.GenerateCode()).Methods(http.MethodPost)
@@ -39,13 +43,7 @@ func NewHandler(logger *slog.Logger) *Handler {
 // GET /qr
 func (h *Handler) ShowForm(data any) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		tmpl, err := template.New("").ParseFiles("qr.html")
-		if err != nil {
-			h.logger.Error("failed to parse template files", "error", err)
-			w.WriteHeader(http.StatusInternalServerError)
-			return
-		}
-		if err := tmpl.ExecuteTemplate(w, "qr", data); err != nil {
+		if err := h.tmpl.ExecuteTemplate(w, "qr", data); err != nil {
 			h.logger.Error("failed to execute template", "error", err, "template", "qr")
 			w.WriteHeader(http.StatusInternalServerError)
 			return
