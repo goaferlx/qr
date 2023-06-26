@@ -14,10 +14,10 @@
         <title>QR Code Generator</title>
     </head>
     <body>
-        <main class="w3-container w3-quarter">
+        <main class="w3-container w3-col m12 l8">
             {{if .Error}}
             <section class="w3-panel w3-red">
-                {{.Error}}
+                <h3>{{.Error}}</h3>
             </section>
             {{end}}
             {{if .Code}}
@@ -28,7 +28,17 @@
             {{end}}            
             <section class="w3-section">
                 <form name="qrcode" method="POST" action="" enctype="application/x-www-form-urlencoded">
-                    <label for="text">Text to encode:</label>
+                    <div class="w3-bar">
+                        <label>URL:</label>
+                        <input name="data_type" type="radio" value="url" class="w3-radio" checked />
+                        <label>Phone:</label>
+                        <input name="data_type" type="radio" value="tel" class="w3-radio" />
+                        <label>SMS:</label>
+                        <input name="data_type" type="radio" value="sms" class="w3-radio" />
+                        <label>Email:</label>
+                        <input name="data_type" type="radio" value="email" class="w3-radio" />
+                    </div><br />
+                    <!-- <label for="text">Text to encode:</label><br />-->
                     <input name="text" type="text" placeholder="https://example@domain.com" value="{{.Text}}" required class="w3-input w3-border w3-mobile" /><br />
                     <button name="submit" type="submit" value="submit" class="w3-button w3-green w3-mobile ">Generate QR Code!</button>
                 </form>

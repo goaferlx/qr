@@ -60,8 +60,16 @@ func (h *Handler) GenerateCode() http.HandlerFunc {
 			h.ShowForm(Response{Error: "Something went wrong"}).ServeHTTP(w, r)
 			return
 		}
-
-		code, err := qr.Encode(r.PostFormValue("text"), qr.H, qr.Auto)
+		var text string
+		switch r.PostFormValue("data_type") {
+		case "tel":
+			text = "tel:" + r.PostFormValue("text")
+		case "email":
+			text = "mailto:" + r.PostFormValue("text")
+		case "sms":
+			text = "sms:" + r.PostFormValue("text")
+		}
+		code, err := qr.Encode(text, qr.H, qr.Auto)
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			h.logger.Info("failed to encode to qr", "error", err)
