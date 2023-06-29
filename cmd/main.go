@@ -11,6 +11,10 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/felixge/httpsnoop"
+	"github.com/goaferlx/qr"
+	"github.com/goaferlx/qr/api"
+	"github.com/gorilla/mux"
 	"golang.org/x/exp/slog"
 )
 
@@ -58,15 +62,17 @@ func main() {
 				}
 			}()
 
-			logger.Info("http request", slog.Group("request", "method", r.Method, "uri", r.RequestURI, "proto", r.Proto))
-			next.ServeHTTP(w, r)
+			metrics := httpsnoop.CaptureMetrics(next, w, r)
+			logger.Info("http request", slog.Group("request", "method", r.Method, "uri", r.RequestURI, "proto", r.Proto, "code", metrics.Code, "size", metrics.Written))
 		})
 	}
 
-	handler := NewHandler(logger)
+	router := mux.NewRouter().StrictSlash(true)
+	router.Path("/").Handler(qr.NewHandler(logger))
+	router.PathPrefix("/v1/").Handler(http.StripPrefix("/v1", api.NewHandler(logger)))
 	srv := http.Server{
 		Addr:         fmt.Sprintf(":%d", *port),
-		Handler:      mw(handler),
+		Handler:      mw(router),
 		ReadTimeout:  5 * time.Second,
 		WriteTimeout: 10 * time.Second,
 		IdleTimeout:  120 * time.Second,

@@ -1,14 +1,9 @@
-package main
+package qr
 
 import (
-	"bytes"
-	"encoding/base64"
 	"html/template"
-	"image/png"
 	"net/http"
 
-	"github.com/boombuler/barcode"
-	"github.com/boombuler/barcode/qr"
 	"github.com/gorilla/mux"
 
 	"golang.org/x/exp/slog"
@@ -18,6 +13,11 @@ type Response struct {
 	Text  string
 	Code  string
 	Error string
+}
+
+type CodeRequest struct {
+	DataType string `json:"data_type,omitempty"`
+	Text     string `json:"text,omitempty"`
 }
 
 type Handler struct {
@@ -34,14 +34,14 @@ func NewHandler(logger *slog.Logger) *Handler {
 	}
 
 	router := mux.NewRouter().StrictSlash(true)
-	router.HandleFunc("/", h.ShowForm(nil)).Methods(http.MethodGet)
-	router.HandleFunc("/", h.GenerateCode()).Methods(http.MethodPost)
+	router.HandleFunc("/", h.showForm(nil)).Methods(http.MethodGet)
+	router.HandleFunc("/", h.generateCode()).Methods(http.MethodPost)
 	h.Handler = router
 	return &h
 }
 
 // GET /qr
-func (h *Handler) ShowForm(data any) http.HandlerFunc {
+func (h *Handler) showForm(data any) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if err := h.tmpl.ExecuteTemplate(w, "qr", data); err != nil {
 			h.logger.Error("failed to execute template", "error", err, "template", "qr")
@@ -52,48 +52,23 @@ func (h *Handler) ShowForm(data any) http.HandlerFunc {
 }
 
 // POST /qr
-func (h *Handler) GenerateCode() http.HandlerFunc {
+func (h *Handler) generateCode() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if err := r.ParseForm(); err != nil {
 			h.logger.Info("failed to parse form", "error", err)
 			w.WriteHeader(http.StatusInternalServerError)
-			h.ShowForm(Response{Error: "Something went wrong"}).ServeHTTP(w, r)
+			h.showForm(Response{Error: "Something went wrong"}).ServeHTTP(w, r)
 			return
 		}
-		var text string
-		switch r.PostFormValue("data_type") {
-		case "tel":
-			text = "tel:" + r.PostFormValue("text")
-		case "email":
-			text = "mailto:" + r.PostFormValue("text")
-		case "sms":
-			text = "sms:" + r.PostFormValue("text")
-		}
-		code, err := qr.Encode(text, qr.H, qr.Auto)
+
+		encodedQR, err := GenerateCode(r.Context(), CodeRequest{Text: r.PostFormValue("text"), DataType: r.PostFormValue("data_type")})
 		if err != nil {
+			h.logger.Info("failed to generate QR Code", "error", err)
 			w.WriteHeader(http.StatusInternalServerError)
-			h.logger.Info("failed to encode to qr", "error", err)
-			h.ShowForm(Response{Error: "Something went wrong"}).ServeHTTP(w, r)
+			h.showForm(Response{Error: "Something went wrong"}).ServeHTTP(w, r)
 			return
 		}
 
-		scaledCode, err := barcode.Scale(code, 600, 600)
-		if err != nil {
-			w.WriteHeader(http.StatusInternalServerError)
-			h.logger.Info("failed to scale qr code", "error", err)
-			h.ShowForm(Response{Error: "Something went wrong"}).ServeHTTP(w, r)
-			return
-		}
-
-		var buf bytes.Buffer
-		if err := png.Encode(&buf, scaledCode); err != nil {
-			w.WriteHeader(http.StatusInternalServerError)
-			h.logger.Error("failed to encode to png", "error", err)
-			h.ShowForm(Response{Error: "Something went wrong"}).ServeHTTP(w, r)
-			return
-		}
-
-		encodedQR := base64.RawStdEncoding.EncodeToString(buf.Bytes())
-		h.ShowForm(Response{Text: r.PostFormValue("text"), Code: encodedQR}).ServeHTTP(w, r)
+		h.showForm(Response{Text: r.PostFormValue("text"), Code: encodedQR}).ServeHTTP(w, r)
 	}
 }
