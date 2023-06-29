@@ -39,8 +39,9 @@ func (h *Handler) GenerateCode() http.HandlerFunc {
 		encodedQR, err := qr.GenerateCode(r.Context(), req)
 		if err != nil {
 			switch {
-			case errors.Is(err, qr.ErrUnsupportedDataType):
+			case errors.Is(err, qr.ErrUnsupportedDataType), errors.Is(err, qr.ErrRequired):
 				w.WriteHeader(http.StatusUnprocessableEntity)
+				json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			default:
 				h.logger.Info("failed to generate QR Code", "error", err)
 				w.WriteHeader(http.StatusInternalServerError)

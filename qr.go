@@ -18,24 +18,42 @@ const DefaultQRSize int = 600
 
 var (
 	ErrUnsupportedDataType error = errors.New("unsupported data type")
+	ErrRequired            error = errors.New("input is required")
 )
 
+type DataType string
+
+const (
+	TypeURL   = "url"
+	TypeTel   = "tel"
+	TypeSMS   = "sms"
+	TypeEmail = "email"
+)
+
+type CodeRequest struct {
+	DataType string `json:"data_type,omitempty"`
+	Text     string `json:"text,omitempty"`
+}
+
 func GenerateCode(ctx context.Context, req CodeRequest) (string, error) {
-	var text string
+	if req.Text == "" {
+		return "", ErrRequired
+	}
+	var textToEncode string
 	switch req.DataType {
-	case "url":
-		text = req.Text
-	case "tel":
-		text = "tel:" + req.Text
-	case "email":
-		text = "mailto:" + req.Text
-	case "sms":
-		text = "smsto:" + req.Text
+	case TypeURL:
+		textToEncode = req.Text
+	case TypeTel:
+		textToEncode = "tel:" + req.Text
+	case TypeEmail:
+		textToEncode = "mailto:" + req.Text
+	case TypeSMS:
+		textToEncode = "smsto:" + req.Text
 	default:
 		return "", ErrUnsupportedDataType
 	}
 
-	qrcode, err := qr.Encode(text, qr.H, qr.Auto)
+	qrcode, err := qr.Encode(textToEncode, qr.H, qr.Auto)
 	if err != nil {
 		return "", fmt.Errorf("failed to encode qr code: %w", err)
 	}

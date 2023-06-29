@@ -15,11 +15,6 @@ type Response struct {
 	Error string
 }
 
-type CodeRequest struct {
-	DataType string `json:"data_type,omitempty"`
-	Text     string `json:"text,omitempty"`
-}
-
 type Handler struct {
 	http.Handler
 	logger *slog.Logger
